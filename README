@@ -1,35 +1,33 @@
-OVERVIEW
+# OVERVIEW
 
 nullfs is FUSE filesystem driver which discards
 all files' data written to it.
 
 Reading from any nullfs file returns EOF.
 
-Regarding directories, different strategies
-exist and several implementations ar provided
-(see below). 
+The improvements respect the original project are:
+1) Support for a hierarchy. Subdirs are allowed.
+However in an initial benchmark the results were not
+very encouraging (approx 250 MB/s). 
 
-DETAILED DESCRIPTION
+
+# DETAILED DESCRIPTION
 
 Proper implementation requires nullfs driver to
 store metadata for files, directories and special
-files (devices/sockets/fifos), and this may not be
-desirable in some cases because of memory
-footprint.
+files (devices/sockets/fifos).
 
-Therefore 3 implementations are to be provided:
+## Nullfs
 
-1. nul1fs
-
-nul1fs implements flat filesystem without support
-for directories except the "/" one. Readdir (ls)
-show only "." and ".." entries in "/".
+nullfs permits to create files/directories until
+it gets OOM killed or malloc()/new() stop working
+(in the later case ot responds with ENOMEM).
 
 Any file can be created, read or written, because
 lookup for any filename returns TRUE and reports
 root:root owner and 0666 permissions.
 
-Building and mounting:
+## Building and mounting:
 
   xrgtn@ux280p:~/jff/nullfs$ make clean
   rm -f nul1fs nullfs nulnfs *.o
@@ -38,9 +36,9 @@ Building and mounting:
   g++   "-lfuse" -o nullfs nullfs.c++
   cc   "-lfuse"  nulnfs.c   -o nulnfs
   xrgtn@ux280p:~/jff/nullfs$ mkdir mnt
-  xrgtn@ux280p:~/jff/nullfs$ ./nul1fs ./mnt
+  xrgtn@ux280p:~/jff/nullfs$ ./nullfs ./mnt
 
-Using:
+## Using:
 
   xrgtn@xrgtn-q40:~/jff/nullfs$ ls -al ./mnt
   total 4
@@ -52,25 +50,3 @@ Using:
   xrgtn@xrgtn-q40:~/jff/nullfs$ ls -l ./mnt/baz
   -rw-rw-rw- 1 root root 0 2010-08-12 12:10 ./mnt/baz
   xrgtn@xrgtn-q40:~/jff/nullfs$ 
-
-2. nulnfs
-
-nulnfs implements nullfs with limited number of
-available inodes. When upper limit is reached,
-old inodes are forgotten if possible (here's
-example when forgetting is impossible:
-cd /tmp/nullfs/ ; while mkdir d ; do cd d ; done).
-If nulnfs cannot free some inodes, it returns
-ENOSPC in response to mkdir/mknod/create.
-
-NOTE: nulnfs hasn't been finished yet (it crashes
-on use) and I have no plans to continue working on
-it at the moment. But two other implementations
-(minimalistic nul1fs one and C++ nullfs) work just
-fine as advertised.
-
-3. nullfs
-
-nullfs permits to create files/directories until
-it gets OOM killed or malloc()/new() stop working
-(in the later case ot responds with ENOMEM).
